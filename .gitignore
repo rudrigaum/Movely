@@ -1,0 +1,111 @@
+# ===========================
+# Movely - .gitignore
+# Swift + Xcode + Firebase
+# ===========================
+
+# MARK: - Xcode
+# ===========================
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+*.xcscmblueprint
+.xcode.env.local
+
+# MARK: - Swift Package Manager
+# ===========================
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# MARK: - CocoaPods 
+# ===========================
+Pods/
+*.xcworkspace
+!default.xcworkspace
+
+# MARK: - Firebase 
+# ===========================
+GoogleService-Info.plist
+google-services.json
+firebase.json
+.firebaserc
+firestore.indexes.json
+
+# MARK: - Secrets & Environment Variables
+# ===========================
+*.env
+.env
+.env.*
+Secrets.swift
+secrets.xcconfig
+Config.xcconfig
+APIKeys.swift
+APIKeys.plist
+
+# MARK: - macOS
+# ===========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# MARK: - SonarQube
+# ===========================
+.sonarqube/
+.scannerwork/
+sonar-project.properties.local
+
+# MARK: - Fastlane 
+# ===========================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/README.md
+
+# MARK: - TestFlight / Distribution
+# ===========================
+*.ipa
+*.dSYM.zip
+*.dSYM
+ExportOptions.plist
+
+# MARK: - Carthage
+# ===========================
+Carthage/Build/
+
+# MARK: - Tuist 
+# ===========================
+*.xcodeproj
+graph.dot
+Derived/
+
+# MARK: - CI/CD
+# ===========================
+.github/secrets/
+*.p8
+*.p12
+*.mobileprovision
+AuthKey_*.p8
