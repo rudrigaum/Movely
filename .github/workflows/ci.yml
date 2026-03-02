@@ -1,7 +1,7 @@
 # ===========================
 # Movely - CI Pipeline
 # Triggers: Push e Pull Request
-# Jobs: SwiftLint + Build + Tests
+# Jobs: SwiftLint + Build + Tests + SonarCloud
 # ===========================
 
 name: CI
@@ -31,7 +31,17 @@ jobs:
         run: brew install swiftlint
 
       - name: Run SwiftLint
-        run: swiftlint lint --config .swiftlint.yml --reporter github-actions-logging
+        run: |
+          swiftlint lint \
+            --config .swiftlint.yml \
+            --reporter json > swiftlint-report.json || true
+
+      - name: Upload SwiftLint Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftlint-report
+          path: swiftlint-report.json
+          retention-days: 1
 
   # MARK: - Build & Test
   build-and-test:
@@ -66,7 +76,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | xcpretty
 
-      - name: Run Tests
+      - name: Run Tests with Coverage
         run: |
           xcodebuild test \
             -project Movely.xcodeproj \
@@ -75,13 +85,53 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             -enableCodeCoverage YES \
+            -resultBundlePath TestResults.xcresult \
             | xcpretty
+
+      - name: Generate Coverage Report
+        run: |
+          xcrun xccov view \
+            --report --json TestResults.xcresult > coverage.json || true
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-results
-          path: |
-            ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+          path: TestResults.xcresult
           retention-days: 7
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.json
+          retention-days: 1
+
+  # MARK: - SonarCloud Analysis
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Download SwiftLint Report
+        uses: actions/download-artifact@v4
+        with:
+          name: swiftlint-report
+
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
