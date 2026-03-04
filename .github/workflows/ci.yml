@@ -88,10 +88,13 @@ jobs:
             -resultBundlePath TestResults.xcresult \
             | xcpretty
 
+      - name: Install xccov-to-sonarqube-generic
+        run: brew install xccov-to-sonarqube-generic
+
       - name: Generate Coverage Report
         run: |
-          xcrun xccov view \
-            --report --json TestResults.xcresult > coverage.json || true
+          xccov-to-sonarqube-generic \
+            TestResults.xcresult > coverage.xml
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -105,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage.json
+          path: coverage.xml
           retention-days: 1
 
   # MARK: - SonarCloud Analysis
@@ -118,7 +121,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Download SwiftLint Report
         uses: actions/download-artifact@v4
