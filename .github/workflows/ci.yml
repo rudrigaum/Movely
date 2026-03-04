@@ -88,9 +88,6 @@ jobs:
             -resultBundlePath TestResults.xcresult \
             | xcpretty
 
-      - name: Install xccov-to-sonarqube-generic
-        run: brew install xccov-to-sonarqube-generic
-
       - name: Generate Coverage Report
         run: |
           curl -o xccov-to-sonarqube-generic.sh \
