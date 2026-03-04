@@ -93,8 +93,10 @@ jobs:
 
       - name: Generate Coverage Report
         run: |
-          xccov-to-sonarqube-generic \
-            TestResults.xcresult > coverage.xml
+          curl -o xccov-to-sonarqube-generic.sh \
+            https://raw.githubusercontent.com/SonarSource/sonar-scanning-examples/master/swift-coverage/xccov-to-sonarqube-generic.sh
+          chmod +x xccov-to-sonarqube-generic.sh
+          ./xccov-to-sonarqube-generic.sh TestResults.xcresult > coverage.xml
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
