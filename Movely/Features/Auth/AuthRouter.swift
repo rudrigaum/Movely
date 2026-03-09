@@ -54,9 +54,9 @@ public struct AuthFlowView: View {
                     case .login:
                         LoginView(router: router)
                     case .register:
-                        Text("Register — Coming soon")
+                        RegisterView(router: router)
                     case .forgotPassword:
-                        Text("Forgot Password — Coming soon")
+                        ForgotPasswordView(router: router)
                     }
                 }
         }
