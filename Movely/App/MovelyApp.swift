@@ -29,7 +29,7 @@ struct MovelyApp: App {
     // MARK: - Body
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environment(environment)
         }
     }
