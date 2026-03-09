@@ -9,7 +9,6 @@ import Foundation
 import SwiftUI
 
 // MARK: - App Environment
-
 @Observable
 public final class AppEnvironment {
 
@@ -53,6 +52,14 @@ public extension AppEnvironment {
         let env = AppEnvironment(authRepository: repository)
         env.currentUser = repository.currentUser
         return env
+    }
+
+    static var isRunningInPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PLAYGROUNDS"] != nil
+    }
+
+    static func resolved() -> AppEnvironment {
+        isRunningInPreview ? .mock() : .production()
     }
 }
 #endif
