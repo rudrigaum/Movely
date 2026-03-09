@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		18EC3C3C2F5B541A006704FD /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 18EC3C3B2F5B541A006704FD /* FirebaseAuth */; };
+		18EC3C3E2F5B541A006704FD /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 18EC3C3D2F5B541A006704FD /* FirebaseFirestore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		18ABCD152F51D83C00B9B0D5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +57,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18EC3C3C2F5B541A006704FD /* FirebaseAuth in Frameworks */,
+				18EC3C3E2F5B541A006704FD /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,6 +120,8 @@
 			);
 			name = Movely;
 			packageProductDependencies = (
+				18EC3C3B2F5B541A006704FD /* FirebaseAuth */,
+				18EC3C3D2F5B541A006704FD /* FirebaseFirestore */,
 			);
 			productName = Movely;
 			productReference = 18ABCD072F51D83A00B9B0D5 /* Movely.app */;
@@ -198,6 +207,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				18ABCD362F51DC2C00B9B0D5 /* XCRemoteSwiftPackageReference "SwiftLint" */,
+				18EC3C3A2F5B541A006704FD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 18ABCD082F51D83A00B9B0D5 /* Products */;
@@ -614,7 +624,28 @@
 				minimumVersion = 0.63.2;
 			};
 		};
+		18EC3C3A2F5B541A006704FD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.10.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		18EC3C3B2F5B541A006704FD /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18EC3C3A2F5B541A006704FD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		18EC3C3D2F5B541A006704FD /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18EC3C3A2F5B541A006704FD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 18ABCCFF2F51D83A00B9B0D5 /* Project object */;
 }
