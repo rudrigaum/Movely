@@ -49,7 +49,7 @@ public enum AuthError: LocalizedError {
 #if DEBUG
 final class AuthRepositoryMock: AuthRepositoryProtocol {
 
-    var currentUser: User? = nil
+    var currentUser: User?
     var shouldFail = false
 
     func signIn(email: String, password: String) async throws -> User {
