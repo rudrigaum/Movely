@@ -41,20 +41,18 @@ public final class AuthRouter {
 // MARK: - Auth Flow View
 public struct AuthFlowView: View {
 
-    // MARK: - Dependencies
     @State private var router = AuthRouter()
     @Environment(AppEnvironment.self) private var env
 
-    // MARK: - Body
     public var body: some View {
         NavigationStack(path: $router.path) {
-            LoginView(router: router)
+            LoginView(router: router, signInUseCase: env.signInUseCase)
                 .navigationDestination(for: AuthRoute.self) { route in
                     switch route {
                     case .login:
-                        LoginView(router: router)
+                        LoginView(router: router, signInUseCase: env.signInUseCase)
                     case .register:
-                        RegisterView(router: router)
+                        RegisterView(router: router, signUpUseCase: env.signUpUseCase)
                     case .forgotPassword:
                         ForgotPasswordView(router: router)
                     }

@@ -17,12 +17,10 @@ public struct LoginView: View {
     private let router: AuthRouter
 
     // MARK: - Init
-    public init(router: AuthRouter) {
+    public init(router: AuthRouter, signInUseCase: SignInUseCaseProtocol) {
         self.router = router
         self._viewModel = State(
-            initialValue: LoginViewModel(
-                signInUseCase: SignInUseCaseMock()
-            )
+            initialValue: LoginViewModel(signInUseCase: signInUseCase)
         )
     }
 
@@ -198,7 +196,7 @@ private extension View {
 // MARK: - Preview
 #Preview("Login - Idle") {
     NavigationStack {
-        LoginView(router: AuthRouter())
+        LoginView(router: AuthRouter(), signInUseCase: SignInUseCaseMock())
             .environment(AppEnvironment.mock())
     }
 }
@@ -207,14 +205,14 @@ private extension View {
     let env = AppEnvironment.mock()
     let router = AuthRouter()
     NavigationStack {
-        LoginView(router: router)
+        LoginView(router: router, signInUseCase: SignInUseCaseMock())
             .environment(env)
     }
 }
 
 #Preview("Login - Error") {
     NavigationStack {
-        LoginView(router: AuthRouter())
+        LoginView(router: AuthRouter(), signInUseCase: SignInUseCaseMock())
             .environment(AppEnvironment.mock(shouldFail: true))
     }
 }

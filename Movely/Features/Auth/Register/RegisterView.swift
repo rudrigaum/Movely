@@ -17,12 +17,10 @@ public struct RegisterView: View {
     private let router: AuthRouter
 
     // MARK: - Init
-    public init(router: AuthRouter) {
+    public init(router: AuthRouter, signUpUseCase: SignUpUseCaseProtocol) {
         self.router = router
         self._viewModel = State(
-            initialValue: RegisterViewModel(
-                signUpUseCase: SignUpUseCaseMock()
-            )
+            initialValue: RegisterViewModel(signUpUseCase: signUpUseCase)
         )
     }
 
@@ -215,7 +213,9 @@ public struct RegisterView: View {
     // MARK: - Field States
     private var nameFieldState: MovelyTextFieldState {
         guard !viewModel.name.isEmpty else { return .idle }
-        return Validators.isValidName(viewModel.name) ? .success : .error(message: "Name must be at least 2 characters.")
+        return Validators.isValidName(viewModel.name)
+            ? .success
+            : .error(message: "Name must be at least 2 characters.")
     }
 
     private var emailFieldState: MovelyTextFieldState {
@@ -289,14 +289,14 @@ private extension View {
 // MARK: - Preview
 #Preview("Register - Idle") {
     NavigationStack {
-        RegisterView(router: AuthRouter())
+        RegisterView(router: AuthRouter(), signUpUseCase: SignUpUseCaseMock())
             .environment(AppEnvironment.mock())
     }
 }
 
 #Preview("Register - Dark") {
     NavigationStack {
-        RegisterView(router: AuthRouter())
+        RegisterView(router: AuthRouter(), signUpUseCase: SignUpUseCaseMock())
             .environment(AppEnvironment.mock())
             .preferredColorScheme(.dark)
     }
