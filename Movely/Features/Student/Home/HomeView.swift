@@ -13,6 +13,7 @@ public struct HomeView: View {
     // MARK: - Dependencies
     @State private var viewModel: HomeViewModel
     @Environment(AppEnvironment.self) private var env
+    @State private var selectedTrainerId: String?
 
     // MARK: - Init
     public init() {
@@ -112,8 +113,8 @@ public struct HomeView: View {
             } else {
                 TrainerGrid(
                     trainers: viewModel.nearbyTrainers,
-                    onTap: { _ in
-                        // Navigation to TrainerProfile — coming soon
+                    onTap: { trainer in
+                        _ = trainer
                     }
                 )
             }
