@@ -26,29 +26,29 @@ public struct TrainerProfileView: View {
 
     // MARK: - Body
     public var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollView {
-                VStack(spacing: 0) {
-                    switch viewModel.viewState {
-                    case .idle, .loading:
-                        loadingSection
-                    case .loaded(let trainer):
-                        loadedContent(trainer: trainer)
-                    case .failure(let message):
-                        errorSection(message: message)
-                    }
+        ScrollView {
+            VStack(spacing: 0) {
+                switch viewModel.viewState {
+                case .idle, .loading:
+                    loadingSection
+                case .loaded(let trainer):
+                    loadedContent(trainer: trainer)
+                case .failure(let message):
+                    errorSection(message: message)
                 }
             }
-            .ignoresSafeArea(edges: .top)
-
-            if viewModel.trainer != nil {
-                bookingBar
-            }
         }
+        .ignoresSafeArea(edges: .top)
+        .contentMargins(.bottom, 120, for: .scrollContent)
         .movelyScreen()
         .navigationBarBackButtonHidden()
         .toolbar { backButton }
         .task { await viewModel.onAppear() }
+        .safeAreaInset(edge: .bottom) {
+            if viewModel.trainer != nil {
+                bookingBar
+            }
+        }
     }
 
     // MARK: - Loaded Content
@@ -63,7 +63,7 @@ public struct TrainerProfileView: View {
                 detailsSection(trainer: trainer)
             }
             .padding(.horizontal, .movely.screenPaddingHorizontal)
-            .padding(.bottom, 100)
+            .padding(.bottom, 120)
         }
     }
 

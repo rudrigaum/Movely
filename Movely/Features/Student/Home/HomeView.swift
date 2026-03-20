@@ -14,6 +14,7 @@ public struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @Environment(AppEnvironment.self) private var env
     @State private var selectedTrainerId: String?
+    @State private var selectedTrainer: Trainer?
 
     // MARK: - Init
     public init() {
@@ -40,6 +41,9 @@ public struct HomeView: View {
             }
             .movelyScreen()
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(item: $selectedTrainer) { trainer in
+                TrainerProfileView(trainerId: trainer.id)
+            }
             .refreshable { await viewModel.onRefresh() }
             .task { await viewModel.onAppear() }
         }
@@ -95,8 +99,8 @@ public struct HomeView: View {
             } else {
                 TrainerGrid(
                     trainers: viewModel.featuredTrainers,
-                    onTap: { _ in
-                        // Navigation to TrainerProfile — coming soon
+                    onTap: { trainer in
+                        selectedTrainer = trainer
                     }
                 )
             }
@@ -114,7 +118,7 @@ public struct HomeView: View {
                 TrainerGrid(
                     trainers: viewModel.nearbyTrainers,
                     onTap: { trainer in
-                        _ = trainer
+                        selectedTrainer = trainer
                     }
                 )
             }
