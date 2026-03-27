@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "4BEA28B5-8A89-48D2-893B-7B00105DD8AF",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Movely.xcodeproj",
+      "identifier" : "18ABCD062F51D83A00B9B0D5",
+      "name" : "Movely"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:Movely.xcodeproj",
+        "identifier" : "18ABCD132F51D83C00B9B0D5",
+        "name" : "MovelyTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Movely.xcodeproj",
+        "identifier" : "18ABCD1D2F51D83C00B9B0D5",
+        "name" : "MovelyUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
