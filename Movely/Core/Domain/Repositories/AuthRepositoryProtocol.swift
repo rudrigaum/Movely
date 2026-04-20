@@ -16,7 +16,7 @@ public protocol AuthRepositoryProtocol {
 }
 
 // MARK: - Auth Error
-public enum AuthError: LocalizedError {
+public enum AuthError: LocalizedError, Equatable {
     case invalidEmail
     case wrongPassword
     case emailAlreadyInUse

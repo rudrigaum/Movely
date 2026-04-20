@@ -32,7 +32,7 @@ public final class SignInUseCase: SignInUseCaseProtocol {
             throw AuthError.invalidEmail
         }
 
-        guard !trimmedPassword.isEmpty else {
+        guard Validators.isValidPassword(trimmedPassword) else {
             throw AuthError.weakPassword
         }
 
@@ -41,7 +41,6 @@ public final class SignInUseCase: SignInUseCaseProtocol {
             password: trimmedPassword
         )
     }
-
 }
 
 // MARK: - Mock

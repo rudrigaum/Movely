@@ -29,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		189FD22C2F76C7F20034423E /* Movely.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Movely.xctestplan; path = Movely/Movely.xctestplan; sourceTree = "<group>"; };
 		18ABCD072F51D83A00B9B0D5 /* Movely.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Movely.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		18ABCD142F51D83C00B9B0D5 /* MovelyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MovelyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		18ABCD1E2F51D83C00B9B0D5 /* MovelyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MovelyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +83,7 @@
 		18ABCCFE2F51D83A00B9B0D5 = {
 			isa = PBXGroup;
 			children = (
+				189FD22C2F76C7F20034423E /* Movely.xctestplan */,
 				18ABCD092F51D83A00B9B0D5 /* Movely */,
 				18ABCD172F51D83C00B9B0D5 /* MovelyTests */,
 				18ABCD212F51D83C00B9B0D5 /* MovelyUITests */,
