@@ -8,28 +8,283 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Profile View
 public struct ProfileView: View {
 
+    // MARK: - Dependencies
+    @State private var viewModel: ProfileViewModel
     @Environment(AppEnvironment.self) private var env
 
-    public var body: some View {
-        VStack(spacing: .movely.large) {
-            Text("Profile")
-                .font(.movely.title1)
-                .foregroundStyle(.movelyTextPrimary)
+    // MARK: - Init
+    public init() {
+        self._viewModel = State(
+            initialValue: ProfileViewModel(
+                updateUserUseCase: UpdateUserUseCaseMock(),
+                authRepository: AuthRepositoryMock()
+            )
+        )
+    }
 
-            MovelyButton("Sign Out", variant: .destructive) {
+    // MARK: - Body
+    public var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: .movely.xLarge) {
+                    avatarSection
+                    infoSection
+                    actionsSection
+                }
+                .padding(.horizontal, .movely.screenPaddingHorizontal)
+                .padding(.vertical, .movely.xLarge)
+            }
+            .movelyScreen()
+            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.large)
+        }
+        .sheet(isPresented: Binding(
+            get: { viewModel.isEditingName },
+            set: { if !$0 { viewModel.cancelEditingName() } }
+        )) {
+            editNameSheet
+        }
+    }
+
+    // MARK: - Avatar Section
+    private var avatarSection: some View {
+        VStack(spacing: .movely.medium) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.movelyPrimary.opacity(0.8), .movelyPrimary.opacity(0.4)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: .movely.avatarXLarge, height: .movely.avatarXLarge)
+
+                Text(env.currentUser?.name.prefix(1) ?? "?")
+                    .font(.system(size: 40, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+            VStack(spacing: .movely.micro) {
+                Text(env.currentUser?.name ?? "")
+                    .font(.movely.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.movelyTextPrimary)
+
+                Text(env.currentUser?.email ?? "")
+                    .font(.movely.subheadline)
+                    .foregroundStyle(.movelyTextSecondary)
+
+                if let role = env.currentUser?.role {
+                    RoleBadge(role: role)
+                }
+            }
+        }
+    }
+
+    // MARK: - Info Section
+    private var infoSection: some View {
+        MovelyCard {
+            VStack(spacing: 0) {
+                ProfileRow(
+                    icon: "person.fill",
+                    title: "Full Name",
+                    value: env.currentUser?.name ?? ""
+                ) {
+                    viewModel.startEditingName(
+                        currentName: env.currentUser?.name ?? ""
+                    )
+                }
+
+                Divider().padding(.leading, 44)
+
+                ProfileRow(
+                    icon: "envelope.fill",
+                    title: "Email",
+                    value: env.currentUser?.email ?? "",
+                    action: nil
+                )
+
+                Divider().padding(.leading, 44)
+
+                ProfileRow(
+                    icon: "calendar",
+                    title: "Member since",
+                    value: env.currentUser?.createdAt.formatted(.dateTime.month(.wide).year()) ?? "",
+                    action: nil
+                )
+            }
+        }
+    }
+
+    // MARK: - Actions Section
+    private var actionsSection: some View {
+        VStack(spacing: .movely.small) {
+            if let errorMessage = viewModel.errorMessage {
+                errorBanner(message: errorMessage)
+            }
+
+            MovelyButton(
+                "Sign Out",
+                variant: .destructive,
+                isFullWidth: true
+            ) {
                 Task {
-                    try? await env.authRepository.signOut()
+                    try? await viewModel.signOut()
                     env.currentUser = nil
                 }
             }
         }
-        .movelyScreen()
+    }
+
+    // MARK: - Edit Name Sheet
+    private var editNameSheet: some View {
+        NavigationStack {
+            VStack(spacing: .movely.xLarge) {
+                MovelyTextField(
+                    "Full Name",
+                    placeholder: "Your full name",
+                    text: Binding(
+                        get: { viewModel.editingName },
+                        set: { viewModel.editingName = $0 }
+                    ),
+                    state: nameFieldState,
+                    leadingIcon: "person"
+                )
+                .padding(.horizontal, .movely.screenPaddingHorizontal)
+
+                Spacer()
+            }
+            .padding(.top, .movely.large)
+            .movelyScreen()
+            .navigationTitle("Edit Name")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        viewModel.cancelEditingName()
+                    }
+                    .foregroundStyle(.movelyTextSecondary)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    MovelyButton(
+                        "Save",
+                        size: .small,
+                        isLoading: viewModel.isUpdating
+                    ) {
+                        Task {
+                            if let updatedUser = await viewModel.updateName() {
+                                env.currentUser = updatedUser
+                            }
+                        }
+                    }
+                    .disabled(!viewModel.isEditNameValid)
+                    .opacity(viewModel.isEditNameValid ? 1.0 : 0.6)
+                }
+            }
+        }
+        .presentationDetents([.height(200)])
+    }
+
+    // MARK: - Error Banner
+    private func errorBanner(message: String) -> some View {
+        HStack(spacing: .movely.tiny) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.movelyError)
+            Text(message)
+                .font(.movely.caption1)
+                .foregroundStyle(.movelyError)
+            Spacer()
+            Button {
+                viewModel.clearError()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.movelyTextSecondary)
+            }
+        }
+        .padding(.movely.small)
+        .background(.movelyError.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: .movely.radiusMedium))
+    }
+
+    // MARK: - Field States
+    private var nameFieldState: MovelyTextFieldState {
+        guard !viewModel.editingName.isEmpty else { return .idle }
+        return viewModel.isEditNameValid ? .success : .error(message: "Name must be at least 2 characters.")
     }
 }
 
-#Preview {
+// MARK: - Role Badge
+private struct RoleBadge: View {
+    let role: UserRole
+
+    var body: some View {
+        Text(role.rawValue.capitalized)
+            .font(.movely.caption1)
+            .fontWeight(.semibold)
+            .foregroundStyle(.movelyPrimary)
+            .padding(.horizontal, .movely.small)
+            .padding(.vertical, .movely.micro)
+            .background(.movelyPrimary.opacity(0.1))
+            .clipShape(Capsule())
+    }
+}
+
+// MARK: - Profile Row
+private struct ProfileRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    let action: (() -> Void)?
+
+    var body: some View {
+        Button {
+            action?()
+        } label: {
+            HStack(spacing: .movely.small) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundStyle(.movelyPrimary)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.movely.caption1)
+                        .foregroundStyle(.movelyTextSecondary)
+                    Text(value)
+                        .font(.movely.subheadline)
+                        .foregroundStyle(.movelyTextPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+
+                Spacer()
+
+                if action != nil {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.movelyTextSecondary)
+                }
+            }
+            .padding(.movely.medium)
+        }
+        .disabled(action == nil)
+    }
+}
+
+// MARK: - Preview
+#Preview("Profile - Student") {
     ProfileView()
         .environment(AppEnvironment.mock(isAuthenticated: true))
+}
+
+#Preview("Profile - Dark") {
+    ProfileView()
+        .environment(AppEnvironment.mock(isAuthenticated: true))
+        .preferredColorScheme(.dark)
 }
