@@ -7,7 +7,6 @@
 
 import Foundation
 import FirebaseFirestore
-import Foundation
 
 // MARK: - Trainer DTO
 struct TrainerDTO: Codable {

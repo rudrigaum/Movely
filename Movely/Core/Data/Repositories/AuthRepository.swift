@@ -17,6 +17,10 @@ public final class AuthRepository: AuthRepositoryProtocol {
         return firebaseUser.toUser()
     }
 
+    static var currentUserId: String? {
+        FirebaseAuth.Auth.auth().currentUser?.uid
+    }
+
     // MARK: - Sign In
     public func signIn(email: String, password: String) async throws -> User {
         do {
