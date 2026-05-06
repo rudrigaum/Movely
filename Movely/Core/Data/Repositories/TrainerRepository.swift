@@ -12,13 +12,13 @@ import FirebaseFirestore
 final class TrainerRepository: TrainerRepositoryProtocol {
 
     // MARK: - Properties
-    private let db = Firestore.firestore()
+    private let dataBase = Firestore.firestore()
     private let collection = "trainers"
 
     // MARK: - Protocol
     func fetchFeatured() async throws -> [Trainer] {
         do {
-            let snapshot = try await db
+            let snapshot = try await dataBase
                 .collection(collection)
                 .whereField("isFeatured", isEqualTo: true)
                 .whereField("isAvailable", isEqualTo: true)
@@ -36,7 +36,7 @@ final class TrainerRepository: TrainerRepositoryProtocol {
 
     func fetchNearby(limit: Int) async throws -> [Trainer] {
         do {
-            let snapshot = try await db
+            let snapshot = try await dataBase
                 .collection(collection)
                 .whereField("isAvailable", isEqualTo: true)
                 .order(by: "rating", descending: true)
@@ -53,7 +53,7 @@ final class TrainerRepository: TrainerRepositoryProtocol {
 
     func fetchByCategory(_ category: TrainingCategory) async throws -> [Trainer] {
         do {
-            let snapshot = try await db
+            let snapshot = try await dataBase
                 .collection(collection)
                 .whereField("specialties", arrayContains: category.rawValue)
                 .order(by: "rating", descending: true)
@@ -69,7 +69,7 @@ final class TrainerRepository: TrainerRepositoryProtocol {
 
     func fetchById(_ id: String) async throws -> Trainer {
         do {
-            let snapshot = try await db
+            let snapshot = try await dataBase
                 .collection(collection)
                 .document(id)
                 .getDocument()
