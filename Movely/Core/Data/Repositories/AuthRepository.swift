@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseAuth
+import FirebaseFirestore
 
 // MARK: - Auth Repository
 public final class AuthRepository: AuthRepositoryProtocol {
@@ -15,6 +16,10 @@ public final class AuthRepository: AuthRepositoryProtocol {
     public var currentUser: User? {
         guard let firebaseUser = Auth.auth().currentUser else { return nil }
         return firebaseUser.toUser()
+    }
+
+    static var currentUserId: String? {
+        FirebaseAuth.Auth.auth().currentUser?.uid
     }
 
     // MARK: - Sign In
@@ -28,28 +33,19 @@ public final class AuthRepository: AuthRepositoryProtocol {
     }
 
     // MARK: - Sign Up
-    public func signUp(
-        name: String,
-        email: String,
-        password: String,
-        role: UserRole
-    ) async throws -> User {
-        do {
-            let result = try await Auth.auth().createUser(withEmail: email, password: password)
-
-            let changeRequest = result.user.createProfileChangeRequest()
-            changeRequest.displayName = name
-            try await changeRequest.commitChanges()
-
-            return User(
-                id: result.user.uid,
-                name: name,
-                email: email,
-                role: role
-            )
-        } catch let error as NSError {
-            throw error.toAuthError()
-        }
+    public func signUp(name: String, email: String, password: String, role: UserRole) async throws -> User {
+        let result = try await Auth.auth().createUser(withEmail: email, password: password)
+        let user = User(
+            id: result.user.uid,
+            name: name,
+            email: email,
+            role: role,
+            avatarURL: nil,
+            createdAt: Date()
+        )
+        let dataBase = Firestore.firestore()
+        try await dataBase.collection("users").document(user.id).setData(UserDTO.fromDomain(user))
+        return user
     }
 
     // MARK: - Sign Out

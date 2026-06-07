@@ -12,28 +12,20 @@ import SwiftUI
 public struct SearchView: View {
 
     // MARK: - Dependencies
-    @State private var viewModel: SearchViewModel
+    @State private var viewModel: SearchViewModel?
     @State private var selectedTrainer: Trainer?
-
-    // MARK: - Init
-    public init() {
-        self._viewModel = State(
-            initialValue: SearchViewModel(
-                searchUseCase: SearchTrainersUseCaseMock()
-            )
-        )
-    }
+    @Environment(AppEnvironment.self) private var env
 
     // MARK: - Body
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                searchBarSection
-                categoriesSection
-
-                Divider()
-
-                contentSection
+                if let viewModel {
+                    searchBarSection(viewModel: viewModel)
+                    categoriesSection(viewModel: viewModel)
+                    Divider()
+                    contentSection(viewModel: viewModel)
+                }
             }
             .movelyScreen()
             .navigationTitle("Search")
@@ -41,12 +33,20 @@ public struct SearchView: View {
             .navigationDestination(item: $selectedTrainer) { trainer in
                 TrainerProfileView(trainerId: trainer.id)
             }
-            .task { await viewModel.onAppear() }
+            .task {
+                if viewModel == nil {
+                    viewModel = SearchViewModel(
+                        searchUseCase: env.searchTrainersUseCase
+                    )
+                    await viewModel?.onAppear()
+                }
+            }
         }
     }
 
     // MARK: - Search Bar Section
-    private var searchBarSection: some View {
+    // MARK: - Search Bar Section
+    private func searchBarSection(viewModel: SearchViewModel) -> some View {
         HStack(spacing: .movely.small) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.movelyTextSecondary)
@@ -80,7 +80,7 @@ public struct SearchView: View {
     }
 
     // MARK: - Categories Section
-    private var categoriesSection: some View {
+    private func categoriesSection(viewModel: SearchViewModel) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: .movely.tiny) {
                 ForEach(TrainingCategory.allCases) { category in
@@ -99,7 +99,7 @@ public struct SearchView: View {
 
     // MARK: - Content Section
     @ViewBuilder
-    private var contentSection: some View {
+    private func contentSection(viewModel: SearchViewModel) -> some View {
         switch viewModel.viewState {
         case .idle:
             idleSection
@@ -108,9 +108,9 @@ public struct SearchView: View {
         case .loaded(let trainers):
             loadedSection(trainers: trainers)
         case .empty:
-            emptySection
+            emptySection(viewModel: viewModel)
         case .failure(let message):
-            errorSection(message: message)
+            errorSection(message: message, viewModel: viewModel)
         }
     }
 
@@ -178,7 +178,7 @@ public struct SearchView: View {
     }
 
     // MARK: - Empty Section
-    private var emptySection: some View {
+    private func emptySection(viewModel: SearchViewModel) -> some View {
         VStack(spacing: .movely.medium) {
             Image(systemName: "person.slash.fill")
                 .font(.system(size: 48))
@@ -207,7 +207,7 @@ public struct SearchView: View {
     }
 
     // MARK: - Error Section
-    private func errorSection(message: String) -> some View {
+    private func errorSection(message: String, viewModel: SearchViewModel) -> some View {
         VStack(spacing: .movely.large) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 48))

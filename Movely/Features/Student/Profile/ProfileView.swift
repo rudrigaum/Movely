@@ -12,27 +12,21 @@ import SwiftUI
 public struct ProfileView: View {
 
     // MARK: - Dependencies
-    @State private var viewModel: ProfileViewModel
+    @State private var viewModel: ProfileViewModel?
     @Environment(AppEnvironment.self) private var env
 
-    // MARK: - Init
-    public init() {
-        self._viewModel = State(
-            initialValue: ProfileViewModel(
-                updateUserUseCase: UpdateUserUseCaseMock(),
-                authRepository: AuthRepositoryMock()
-            )
-        )
-    }
+    public init() {}
 
     // MARK: - Body
     public var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: .movely.xLarge) {
-                    avatarSection
-                    infoSection
-                    actionsSection
+                    if let viewModel {
+                        avatarSection(viewModel: viewModel)
+                        infoSection(viewModel: viewModel)
+                        actionsSection(viewModel: viewModel)
+                    }
                 }
                 .padding(.horizontal, .movely.screenPaddingHorizontal)
                 .padding(.vertical, .movely.xLarge)
@@ -41,16 +35,26 @@ public struct ProfileView: View {
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
         }
+        .task {
+            if viewModel == nil {
+                viewModel = ProfileViewModel(
+                    updateUserUseCase: env.updateUserUseCase,
+                    authRepository: env.authRepository
+                )
+            }
+        }
         .sheet(isPresented: Binding(
-            get: { viewModel.isEditingName },
-            set: { if !$0 { viewModel.cancelEditingName() } }
+            get: { viewModel?.isEditingName ?? false },
+            set: { if !$0 { viewModel?.cancelEditingName() } }
         )) {
-            editNameSheet
+            if let viewModel {
+                editNameSheet(viewModel: viewModel)
+            }
         }
     }
 
     // MARK: - Avatar Section
-    private var avatarSection: some View {
+    private func avatarSection(viewModel: ProfileViewModel) -> some View {
         VStack(spacing: .movely.medium) {
             ZStack {
                 Circle()
@@ -77,6 +81,8 @@ public struct ProfileView: View {
                 Text(env.currentUser?.email ?? "")
                     .font(.movely.subheadline)
                     .foregroundStyle(.movelyTextSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
 
                 if let role = env.currentUser?.role {
                     RoleBadge(role: role)
@@ -86,7 +92,7 @@ public struct ProfileView: View {
     }
 
     // MARK: - Info Section
-    private var infoSection: some View {
+    private func infoSection(viewModel: ProfileViewModel) -> some View {
         MovelyCard {
             VStack(spacing: 0) {
                 ProfileRow(
@@ -121,10 +127,10 @@ public struct ProfileView: View {
     }
 
     // MARK: - Actions Section
-    private var actionsSection: some View {
+    private func actionsSection(viewModel: ProfileViewModel) -> some View {
         VStack(spacing: .movely.small) {
             if let errorMessage = viewModel.errorMessage {
-                errorBanner(message: errorMessage)
+                errorBanner(message: errorMessage, viewModel: viewModel)
             }
 
             MovelyButton(
@@ -141,7 +147,7 @@ public struct ProfileView: View {
     }
 
     // MARK: - Edit Name Sheet
-    private var editNameSheet: some View {
+    private func editNameSheet(viewModel: ProfileViewModel) -> some View {
         NavigationStack {
             VStack(spacing: .movely.xLarge) {
                 MovelyTextField(
@@ -151,7 +157,7 @@ public struct ProfileView: View {
                         get: { viewModel.editingName },
                         set: { viewModel.editingName = $0 }
                     ),
-                    state: nameFieldState,
+                    state: nameFieldState(viewModel: viewModel),
                     leadingIcon: "person"
                 )
                 .padding(.horizontal, .movely.screenPaddingHorizontal)
@@ -191,7 +197,7 @@ public struct ProfileView: View {
     }
 
     // MARK: - Error Banner
-    private func errorBanner(message: String) -> some View {
+    private func errorBanner(message: String, viewModel: ProfileViewModel) -> some View {
         HStack(spacing: .movely.tiny) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.movelyError)
@@ -213,78 +219,80 @@ public struct ProfileView: View {
     }
 
     // MARK: - Field States
-    private var nameFieldState: MovelyTextFieldState {
+    private func nameFieldState(viewModel: ProfileViewModel) -> MovelyTextFieldState {
         guard !viewModel.editingName.isEmpty else { return .idle }
-        return viewModel.isEditNameValid ? .success : .error(message: "Name must be at least 2 characters.")
+        return viewModel.isEditNameValid
+        ? .success
+        : .error(message: "Name must be at least 2 characters.")
     }
-}
 
-// MARK: - Role Badge
-private struct RoleBadge: View {
-    let role: UserRole
+    // MARK: - Role Badge
+    private struct RoleBadge: View {
+        let role: UserRole
 
-    var body: some View {
-        Text(role.rawValue.capitalized)
-            .font(.movely.caption1)
-            .fontWeight(.semibold)
-            .foregroundStyle(.movelyPrimary)
-            .padding(.horizontal, .movely.small)
-            .padding(.vertical, .movely.micro)
-            .background(.movelyPrimary.opacity(0.1))
-            .clipShape(Capsule())
-    }
-}
-
-// MARK: - Profile Row
-private struct ProfileRow: View {
-    let icon: String
-    let title: String
-    let value: String
-    let action: (() -> Void)?
-
-    var body: some View {
-        Button {
-            action?()
-        } label: {
-            HStack(spacing: .movely.small) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundStyle(.movelyPrimary)
-                    .frame(width: 28)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.movely.caption1)
-                        .foregroundStyle(.movelyTextSecondary)
-                    Text(value)
-                        .font(.movely.subheadline)
-                        .foregroundStyle(.movelyTextPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-
-                Spacer()
-
-                if action != nil {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.movelyTextSecondary)
-                }
-            }
-            .padding(.movely.medium)
+        var body: some View {
+            Text(role.rawValue.capitalized)
+                .font(.movely.caption1)
+                .fontWeight(.semibold)
+                .foregroundStyle(.movelyPrimary)
+                .padding(.horizontal, .movely.small)
+                .padding(.vertical, .movely.micro)
+                .background(.movelyPrimary.opacity(0.1))
+                .clipShape(Capsule())
         }
-        .disabled(action == nil)
     }
-}
 
-// MARK: - Preview
-#Preview("Profile - Student") {
-    ProfileView()
-        .environment(AppEnvironment.mock(isAuthenticated: true))
-}
+    // MARK: - Profile Row
+    private struct ProfileRow: View {
+        let icon: String
+        let title: String
+        let value: String
+        let action: (() -> Void)?
 
-#Preview("Profile - Dark") {
-    ProfileView()
-        .environment(AppEnvironment.mock(isAuthenticated: true))
-        .preferredColorScheme(.dark)
+        var body: some View {
+            Button {
+                action?()
+            } label: {
+                HStack(spacing: .movely.small) {
+                    Image(systemName: icon)
+                        .font(.system(size: 16))
+                        .foregroundStyle(.movelyPrimary)
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.movely.caption1)
+                            .foregroundStyle(.movelyTextSecondary)
+                        Text(value)
+                            .font(.movely.subheadline)
+                            .foregroundStyle(.movelyTextPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+
+                    Spacer()
+
+                    if action != nil {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.movelyTextSecondary)
+                    }
+                }
+                .padding(.movely.medium)
+            }
+            .disabled(action == nil)
+        }
+    }
+
+    // MARK: - Preview
+    #Preview("Profile - Student") {
+        ProfileView()
+            .environment(AppEnvironment.mock(isAuthenticated: true))
+    }
+
+    #Preview("Profile - Dark") {
+        ProfileView()
+            .environment(AppEnvironment.mock(isAuthenticated: true))
+            .preferredColorScheme(.dark)
+    }
 }

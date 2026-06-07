@@ -17,15 +17,37 @@ public final class AppEnvironment {
     public let signInUseCase: SignInUseCaseProtocol
     public let signUpUseCase: SignUpUseCaseProtocol
 
+    // MARK: - User
+    public let userRepository: UserRepositoryProtocol
+    public let updateUserUseCase: UpdateUserUseCaseProtocol
+
+    // MARK: - Trainer
+    public let trainerRepository: TrainerRepositoryProtocol
+    public let fetchFeaturedUseCase: FetchFeaturedTrainersUseCaseProtocol
+    public let fetchNearbyUseCase: FetchNearbyTrainersUseCaseProtocol
+    public let searchTrainersUseCase: SearchTrainersUseCaseProtocol
+
     // MARK: - Session
     public var currentUser: User?
     public var isAuthenticated: Bool { currentUser != nil }
 
     // MARK: - Init
-    public init(authRepository: AuthRepositoryProtocol) {
+    public init(
+        authRepository: AuthRepositoryProtocol,
+        userRepository: UserRepositoryProtocol,
+        trainerRepository: TrainerRepositoryProtocol
+    ) {
         self.authRepository = authRepository
+        self.userRepository = userRepository
+        self.trainerRepository = trainerRepository
+
         self.signInUseCase = SignInUseCase(repository: authRepository)
         self.signUpUseCase = SignUpUseCase(repository: authRepository)
+        self.updateUserUseCase = UpdateUserUseCase(repository: userRepository)
+        self.fetchFeaturedUseCase = FetchFeaturedTrainersUseCase(repository: trainerRepository)
+        self.fetchNearbyUseCase = FetchNearbyTrainersUseCase(repository: trainerRepository)
+        self.searchTrainersUseCase = SearchTrainersUseCase(repository: trainerRepository)
+
         self.currentUser = authRepository.currentUser
     }
 }
@@ -33,7 +55,11 @@ public final class AppEnvironment {
 // MARK: - Production Environment
 public extension AppEnvironment {
     static func production() -> AppEnvironment {
-        AppEnvironment(authRepository: AuthRepository())
+        AppEnvironment(
+            authRepository: AuthRepository(),
+            userRepository: UserRepository(),
+            trainerRepository: TrainerRepository()
+        )
     }
 }
 
@@ -44,13 +70,25 @@ public extension AppEnvironment {
         isAuthenticated: Bool = false,
         shouldFail: Bool = false
     ) -> AppEnvironment {
-        let repository = AuthRepositoryMock()
-        repository.shouldFail = shouldFail
+        let authRepository = AuthRepositoryMock()
+        authRepository.shouldFail = shouldFail
         if isAuthenticated {
-            repository.currentUser = .mockStudent
+            authRepository.currentUser = .mockStudent
         }
-        let env = AppEnvironment(authRepository: repository)
-        env.currentUser = repository.currentUser
+
+        let userRepository = UserRepositoryMock()
+        userRepository.shouldFail = shouldFail
+
+        let trainerRepository = TrainerRepositoryMock()
+        trainerRepository.shouldFail = shouldFail
+        trainerRepository.delay = 0
+
+        let env = AppEnvironment(
+            authRepository: authRepository,
+            userRepository: userRepository,
+            trainerRepository: trainerRepository
+        )
+        env.currentUser = authRepository.currentUser
         return env
     }
 
