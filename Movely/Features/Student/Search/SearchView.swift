@@ -227,44 +227,6 @@ public struct SearchView: View {
     }
 }
 
-// MARK: - Category Chip
-private struct CategoryChip: View {
-    let category: TrainingCategory
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: .movely.micro) {
-                Image(systemName: category.icon)
-                    .font(.system(size: 12))
-                Text(category.rawValue)
-                    .font(.movely.caption1)
-                    .fontWeight(.medium)
-            }
-            .foregroundStyle(isSelected ? .white : .movelyTextPrimary)
-            .padding(.horizontal, .movely.small)
-            .padding(.vertical, .movely.tiny)
-            .background(isSelected ? .movelyPrimary : .movelyBackgroundElevated)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .strokeBorder(isSelected ? .clear : .movelyBorder, lineWidth: 1)
-            )
-        }
-        .buttonStyle(MovelyPressButtonStyle())
-    }
-}
-
-// MARK: - Press Style
-private struct MovelyPressButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
-    }
-}
-
 // MARK: - Preview
 #Preview("Search - Loaded") {
     SearchView()
