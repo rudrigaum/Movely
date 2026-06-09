@@ -69,7 +69,7 @@ public final class BookingRepositoryMock: BookingRepositoryProtocol {
             trainerId: old.trainerId,
             date: old.date,
             durationInMinutes: old.durationInMinutes,
-            status: status, 
+            status: status,
             notes: old.notes,
             createdAt: old.createdAt
         )

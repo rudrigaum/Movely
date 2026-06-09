@@ -27,6 +27,10 @@ public final class AppEnvironment {
     public let fetchNearbyUseCase: FetchNearbyTrainersUseCaseProtocol
     public let searchTrainersUseCase: SearchTrainersUseCaseProtocol
 
+    // MARK: - Booking
+    public let bookingRepository: BookingRepositoryProtocol
+    public let createBookingUseCase: CreateBookingUseCase
+
     // MARK: - Session
     public var currentUser: User?
     public var isAuthenticated: Bool { currentUser != nil }
@@ -35,11 +39,13 @@ public final class AppEnvironment {
     public init(
         authRepository: AuthRepositoryProtocol,
         userRepository: UserRepositoryProtocol,
-        trainerRepository: TrainerRepositoryProtocol
+        trainerRepository: TrainerRepositoryProtocol,
+        bookingRepository: BookingRepositoryProtocol
     ) {
         self.authRepository = authRepository
         self.userRepository = userRepository
         self.trainerRepository = trainerRepository
+        self.bookingRepository = bookingRepository
 
         self.signInUseCase = SignInUseCase(repository: authRepository)
         self.signUpUseCase = SignUpUseCase(repository: authRepository)
@@ -47,6 +53,8 @@ public final class AppEnvironment {
         self.fetchFeaturedUseCase = FetchFeaturedTrainersUseCase(repository: trainerRepository)
         self.fetchNearbyUseCase = FetchNearbyTrainersUseCase(repository: trainerRepository)
         self.searchTrainersUseCase = SearchTrainersUseCase(repository: trainerRepository)
+
+        self.createBookingUseCase = CreateBookingUseCase(repository: bookingRepository)
 
         self.currentUser = authRepository.currentUser
     }
@@ -58,7 +66,8 @@ public extension AppEnvironment {
         AppEnvironment(
             authRepository: AuthRepository(),
             userRepository: UserRepository(),
-            trainerRepository: TrainerRepository()
+            trainerRepository: TrainerRepository(),
+            bookingRepository: BookingRepository()
         )
     }
 }
@@ -83,10 +92,14 @@ public extension AppEnvironment {
         trainerRepository.shouldFail = shouldFail
         trainerRepository.delay = 0
 
+        let bookingRepository = BookingRepositoryMock()
+        bookingRepository.shouldThrowError = shouldFail
+
         let env = AppEnvironment(
             authRepository: authRepository,
             userRepository: userRepository,
-            trainerRepository: trainerRepository
+            trainerRepository: trainerRepository,
+            bookingRepository: bookingRepository
         )
         env.currentUser = authRepository.currentUser
         return env
