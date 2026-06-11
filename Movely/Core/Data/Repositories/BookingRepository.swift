@@ -11,7 +11,7 @@ import FirebaseFirestore
 public final class BookingRepository: BookingRepositoryProtocol {
 
     // MARK: - Properties
-    private let db = Firestore.firestore()
+    private let dataBase = Firestore.firestore()
     private let collectionName = "bookings"
 
     // MARK: - Initialization
@@ -20,7 +20,7 @@ public final class BookingRepository: BookingRepositoryProtocol {
     // MARK: - Create
     public func createBooking(_ booking: Booking) async throws {
         let dto = BookingDTO.fromDomain(booking)
-        let documentRef = db.collection(collectionName).document(booking.id)
+        let documentRef = dataBase.collection(collectionName).document(booking.id)
 
         do {
             try documentRef.setData(from: dto)
@@ -32,9 +32,9 @@ public final class BookingRepository: BookingRepositoryProtocol {
     // MARK: - Fetch (Student)
     public func fetchStudentBookings(studentId: String) async throws -> [Booking] {
         do {
-            let snapshot = try await db.collection(collectionName)
+            let snapshot = try await dataBase.collection(collectionName)
                 .whereField("studentId", isEqualTo: studentId)
-                .order(by: "date", descending: false) AppEnvironment
+                .order(by: "date", descending: false)
                 .getDocuments()
 
             return snapshot.documents.compactMap { document in
@@ -48,7 +48,7 @@ public final class BookingRepository: BookingRepositoryProtocol {
     // MARK: - Fetch (Trainer)
     public func fetchTrainerBookings(trainerId: String) async throws -> [Booking] {
         do {
-            let snapshot = try await db.collection(collectionName)
+            let snapshot = try await dataBase.collection(collectionName)
                 .whereField("trainerId", isEqualTo: trainerId)
                 .order(by: "date", descending: false)
                 .getDocuments()
@@ -63,7 +63,7 @@ public final class BookingRepository: BookingRepositoryProtocol {
 
     // MARK: - Update
     public func updateBookingStatus(bookingId: String, status: BookingStatus) async throws {
-        let documentRef = db.collection(collectionName).document(bookingId)
+        let documentRef = dataBase.collection(collectionName).document(bookingId)
 
         do {
             try await documentRef.updateData([

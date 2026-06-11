@@ -30,6 +30,7 @@ public final class AppEnvironment {
     // MARK: - Booking
     public let bookingRepository: BookingRepositoryProtocol
     public let createBookingUseCase: CreateBookingUseCase
+    public let fetchStudentBookingsUseCase: FetchStudentBookingsUseCaseProtocol
 
     // MARK: - Session
     public var currentUser: User?
@@ -53,9 +54,8 @@ public final class AppEnvironment {
         self.fetchFeaturedUseCase = FetchFeaturedTrainersUseCase(repository: trainerRepository)
         self.fetchNearbyUseCase = FetchNearbyTrainersUseCase(repository: trainerRepository)
         self.searchTrainersUseCase = SearchTrainersUseCase(repository: trainerRepository)
-
         self.createBookingUseCase = CreateBookingUseCase(repository: bookingRepository)
-
+        self.fetchStudentBookingsUseCase = FetchStudentBookingsUseCase(repository: bookingRepository)
         self.currentUser = authRepository.currentUser
     }
 }

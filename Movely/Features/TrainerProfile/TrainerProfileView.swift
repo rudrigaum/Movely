@@ -11,30 +11,34 @@ import SwiftUI
 // MARK: - Trainer Profile View
 public struct TrainerProfileView: View {
     // MARK: - Dependencies
-    @State private var viewModel: TrainerProfileViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppEnvironment.self) private var env
+
+    // MARK: - State
+    private let trainerId: String
+    @State private var viewModel: TrainerProfileViewModel?
+    @State private var isShowingBookingSheet = false
 
     // MARK: - Init
     public init(trainerId: String) {
-        self._viewModel = State(
-            initialValue: TrainerProfileViewModel(
-                trainerId: trainerId,
-                repository: TrainerRepositoryMock()
-            )
-        )
+        self.trainerId = trainerId
     }
 
     // MARK: - Body
     public var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                switch viewModel.viewState {
-                case .idle, .loading:
+                if let viewModel {
+                    switch viewModel.viewState {
+                    case .idle, .loading:
+                        loadingSection
+                    case .loaded(let trainer):
+                        loadedContent(trainer: trainer)
+                    case .failure(let message):
+                        errorSection(message: message, viewModel: viewModel)
+                    }
+                } else {
                     loadingSection
-                case .loaded(let trainer):
-                    loadedContent(trainer: trainer)
-                case .failure(let message):
-                    errorSection(message: message)
                 }
             }
         }
@@ -43,10 +47,36 @@ public struct TrainerProfileView: View {
         .movelyScreen()
         .navigationBarBackButtonHidden()
         .toolbar { backButton }
-        .task { await viewModel.onAppear() }
+        .task {
+            if viewModel == nil {
+                viewModel = TrainerProfileViewModel(
+                    trainerId: trainerId,
+                    repository: env.trainerRepository
+                )
+            }
+            await viewModel?.onAppear()
+        }
         .safeAreaInset(edge: .bottom) {
-            if viewModel.trainer != nil {
-                bookingBar
+            if let viewModel, viewModel.trainer != nil {
+                bookingBar(viewModel: viewModel)
+            }
+        }
+        // MARK: - Booking Sheet
+        .sheet(isPresented: $isShowingBookingSheet) {
+            if let studentId = env.currentUser?.id,
+               let viewModel,
+               let trainerId = viewModel.trainer?.id {
+                NavigationStack {
+                    CreateBookingView(
+                        viewModel: CreateBookingViewModel(
+                            trainerId: trainerId,
+                            studentId: studentId,
+                            createBookingUseCase: env.createBookingUseCase
+                        )
+                    )
+                }
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -120,6 +150,7 @@ public struct TrainerProfileView: View {
             .padding(.bottom, .movely.large)
         }
     }
+
     // MARK: - Specialties Section
     private func specialtiesSection(trainer: Trainer) -> some View {
         VStack(alignment: .leading, spacing: .movely.small) {
@@ -175,7 +206,7 @@ public struct TrainerProfileView: View {
     }
 
     // MARK: - Booking Bar
-    private var bookingBar: some View {
+    private func bookingBar(viewModel: TrainerProfileViewModel) -> some View {
         HStack(spacing: .movely.small) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Starting at")
@@ -190,7 +221,7 @@ public struct TrainerProfileView: View {
             }
 
             MovelyButton("Book Session", isFullWidth: true) {
-                // Navigation to Booking — coming soon
+                isShowingBookingSheet = true
             }
         }
         .padding(.horizontal, .movely.screenPaddingHorizontal)
@@ -222,7 +253,7 @@ public struct TrainerProfileView: View {
     }
 
     // MARK: - Error Section
-    private func errorSection(message: String) -> some View {
+    private func errorSection(message: String, viewModel: TrainerProfileViewModel) -> some View {
         VStack(spacing: .movely.large) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 48))
@@ -333,61 +364,10 @@ private struct DetailRow: View {
     }
 }
 
-// MARK: - Flow Layout
-private struct FlowLayout: Layout {
-    let spacing: CGFloat
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let rows = computeRows(proposal: proposal, subviews: subviews)
-        let height = rows.map { $0.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0 }
-            .reduce(0) { $0 + $1 + spacing }
-        return CGSize(width: proposal.width ?? 0, height: max(0, height - spacing))
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let rows = computeRows(proposal: proposal, subviews: subviews)
-        var offsetY = bounds.minY
-        for row in rows {
-            var offsetX = bounds.minX
-            let rowHeight = row.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0
-            for subview in row {
-                let size = subview.sizeThatFits(.unspecified)
-                subview.place(at: CGPoint(x: offsetX, y: offsetY), proposal: .unspecified)
-                offsetX += size.width + spacing
-            }
-            offsetY += rowHeight + spacing
-        }
-    }
-
-    private func computeRows(proposal: ProposedViewSize, subviews: Subviews) -> [[LayoutSubview]] {
-        var rows: [[LayoutSubview]] = [[]]
-        var offsetX: CGFloat = 0
-        let maxWidth = proposal.width ?? 0
-
-        for subview in subviews {
-            let width = subview.sizeThatFits(.unspecified).width
-            if offsetX + width > maxWidth, !rows[rows.count - 1].isEmpty {
-                rows.append([])
-                offsetX = 0
-            }
-            rows[rows.count - 1].append(subview)
-            offsetX += width + spacing
-        }
-        return rows
-    }
-}
-
 // MARK: - Preview
 #Preview("Trainer Profile - Loaded") {
     NavigationStack {
         TrainerProfileView(trainerId: "1")
             .environment(AppEnvironment.mock(isAuthenticated: true))
-    }
-}
-
-#Preview("Trainer Profile - Dark") {
-    NavigationStack {
-        TrainerProfileView(trainerId: "2")
-            .environment(AppEnvironment.mock(isAuthenticated: true))
-            .preferredColorScheme(.dark)
     }
 }
