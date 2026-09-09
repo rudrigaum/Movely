@@ -8,10 +8,11 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Booking Tab Enum
-private enum BookingTab: String, CaseIterable {
+// MARK: - Booking Tab
+enum BookingTab: String, CaseIterable {
     case upcoming = "Upcoming"
     case past = "Past"
+
 }
 
 // MARK: - Bookings View
@@ -19,224 +20,304 @@ public struct BookingsView: View {
 
     // MARK: - Dependencies
     @Environment(AppEnvironment.self) private var env
-    @State private var viewModel: BookingsViewModel?
 
     // MARK: - State
+    @State private var viewModel: BookingsViewModel?
     @State private var selectedTab: BookingTab = .upcoming
+    @State private var bookingToCancel: Booking?
+    @State private var isShowingCancellationConfirmation = false
+    @State private var isShowingCancellationError = false
 
-    // MARK: - Init
+    // MARK: - Initialization
     public init() {}
 
     // MARK: - Body
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Bookings Filter", selection: $selectedTab) {
-                    ForEach(BookingTab.allCases, id: \.self) { tab in
-                        Text(tab.rawValue).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, .movely.screenPaddingHorizontal)
-                .padding(.vertical, .movely.small)
+                BookingsFilterPicker(
+                    selection: $selectedTab
+                )
 
-                Group {
-                    if let viewModel {
-                        contentBody(for: viewModel)
-                    } else {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
+                content
             }
             .movelyScreen()
             .navigationTitle("My Bookings")
             .task {
-                if viewModel == nil, let studentId = env.currentUser?.id {
-                    viewModel = BookingsViewModel(
-                        studentId: studentId,
-                        fetchBookingsUseCase: env.fetchStudentBookingsUseCase
-                    )
-                    await viewModel?.onAppear()
+                await setupViewModelIfNeeded()
+            }
+            .confirmationDialog(
+                "Cancel session?",
+                isPresented: $isShowingCancellationConfirmation,
+                titleVisibility: .visible
+            ) {
+                cancellationDialogActions
+            } message: {
+                cancellationDialogMessage
+            }
+            .alert(
+                "Unable to Cancel",
+                isPresented: $isShowingCancellationError
+            ) {
+                Button("OK", role: .cancel) {
+                    viewModel?.clearCancellationError()
+                }
+            } message: {
+                if let message = viewModel?.cancellationErrorMessage {
+                    Text(message)
                 }
             }
         }
     }
 
-    // MARK: - Content Body
+    // MARK: - Content
     @ViewBuilder
-    private func contentBody(for viewModel: BookingsViewModel) -> some View {
+    private var content: some View {
+        if let viewModel {
+            content(for: viewModel)
+        } else {
+            ProgressView()
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity
+                )
+        }
+    }
+
+    @ViewBuilder
+    private func content(
+        for viewModel: BookingsViewModel
+    ) -> some View {
         switch viewModel.viewState {
         case .idle, .loading:
-            loadingSection
-        case .loaded(let upcoming, let past):
-            let targetList = selectedTab == .upcoming ? upcoming : past
+            BookingsLoadingView()
 
-            if targetList.isEmpty {
-                emptyStateSection
-            } else {
-                bookingsList(bookings: targetList, viewModel: viewModel)
-            }
+        case .loaded(let upcoming, let past):
+            loadedContent(
+                upcoming: upcoming,
+                past: past,
+                viewModel: viewModel
+            )
 
         case .failure(let message):
-            errorSection(message: message, viewModel: viewModel)
+            BookingsErrorView(
+                message: message
+            ) {
+                Task {
+                    await viewModel.onRefresh()
+                }
+            }
+        }
+    }
+
+    // MARK: - Loaded Content
+    @ViewBuilder
+    private func loadedContent(
+        upcoming: [Booking],
+        past: [Booking],
+        viewModel: BookingsViewModel
+    ) -> some View {
+        let bookings = selectedTab == .upcoming
+        ? upcoming
+        : past
+
+        if bookings.isEmpty {
+            BookingsEmptyState(
+                message: emptyStateMessage
+            )
+        } else {
+            bookingsList(
+                bookings: bookings,
+                viewModel: viewModel
+            )
         }
     }
 
     // MARK: - Bookings List
-    private func bookingsList(bookings: [Booking], viewModel: BookingsViewModel) -> some View {
+    private func bookingsList(
+        bookings: [Booking],
+        viewModel: BookingsViewModel
+    ) -> some View {
         ScrollView {
             LazyVStack(spacing: .movely.medium) {
                 ForEach(bookings) { booking in
-                    BookingCard(booking: booking)
+                    BookingCard(
+                        booking: booking,
+                        isCancelling:
+                            viewModel.cancellingBookingId == booking.id,
+                        onCancel: canCancel(booking) ? {
+                            requestCancellation(
+                                for: booking
+                            )
+                        } : nil
+                    )
                 }
             }
-            .padding(.horizontal, .movely.screenPaddingHorizontal)
-            .padding(.vertical, .movely.medium)
+            .padding(
+                .horizontal,
+                .movely.screenPaddingHorizontal
+            )
+            .padding(
+                .vertical,
+                .movely.medium
+            )
         }
         .refreshable {
             await viewModel.onRefresh()
         }
     }
 
-    // MARK: - Loading Section
-    private var loadingSection: some View {
-        ScrollView {
-            LazyVStack(spacing: .movely.medium) {
-                ForEach(0..<4, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: .movely.radiusLarge)
-                        .fill(.movelyBackgroundElevated)
-                        .frame(height: 120)
-                        .movelyShimmer(isLoading: true)
-                }
-            }
-            .padding(.horizontal, .movely.screenPaddingHorizontal)
-            .padding(.top, .movely.medium)
+    // MARK: - Cancellation Dialog
+    @ViewBuilder
+    private var cancellationDialogActions: some View {
+        Button(
+            "Cancel Session",
+            role: .destructive
+        ) {
+            confirmCancellation()
+        }
+
+        Button(
+            "Keep Session",
+            role: .cancel
+        ) {
+            bookingToCancel = nil
         }
     }
 
-    // MARK: - Empty State Section
-    private var emptyStateSection: some View {
-        VStack(spacing: .movely.medium) {
-            Image(systemName: "calendar.badge.exclamationmark")
-                .font(.system(size: 64))
-                .foregroundStyle(.movelyPrimary.opacity(0.5))
-
-            Text("No bookings found")
-                .font(.movely.title3)
-                .fontWeight(.semibold)
-                .foregroundStyle(.movelyTextPrimary)
-
-            Text(selectedTab == .upcoming ? "You don't have any upcoming sessions scheduled." :
-                    "You haven't completed any sessions yet.")
-                .font(.movely.subheadline)
-                .foregroundStyle(.movelyTextSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, .movely.large)
+    @ViewBuilder
+    private var cancellationDialogMessage: some View {
+        if let booking = bookingToCancel {
+            Text(
+                """
+                Cancel your session scheduled for \
+                \(formattedDate(for: booking))?
+                """
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Error Section
-    private func errorSection(message: String, viewModel: BookingsViewModel) -> some View {
-        VStack(spacing: .movely.large) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.movelyError)
-
-            Text(message)
-                .font(.movely.subheadline)
-                .foregroundStyle(.movelyTextSecondary)
-                .multilineTextAlignment(.center)
-
-            MovelyButton("Try Again") {
-                Task { await viewModel.onRefresh() }
-            }
-        }
-        .padding(.movely.screenPaddingHorizontal)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    // MARK: - Cancellation
+    private func requestCancellation(
+        for booking: Booking
+    ) {
+        bookingToCancel = booking
+        isShowingCancellationConfirmation = true
     }
-}
 
-// MARK: - Booking Card
-private struct BookingCard: View {
-    let booking: Booking
+    private func confirmCancellation() {
+        guard
+            let booking = bookingToCancel,
+            let viewModel
+        else {
+            return
+        }
 
-    var body: some View {
-        MovelyCard {
-            VStack(alignment: .leading, spacing: .movely.small) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(booking.date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-                            .font(.movely.headline)
-                            .foregroundStyle(.movelyTextPrimary)
+        isShowingCancellationConfirmation = false
 
-                        Text(booking.date.formatted(.dateTime.hour().minute()))
-                            .font(.movely.subheadline)
-                            .foregroundStyle(.movelyPrimary)
-                            .fontWeight(.semibold)
-                    }
+        Task {
+            await viewModel.cancelBooking(booking)
 
-                    Spacer()
+            bookingToCancel = nil
 
-                    StatusBadge(status: booking.status)
-                }
-
-                Divider()
-
-                HStack(spacing: .movely.medium) {
-                    Label("\(booking.durationInMinutes) min", systemImage: "clock.fill")
-                    Label("Session", systemImage: "figure.run")
-                }
-                .font(.movely.caption1)
-                .foregroundStyle(.movelyTextSecondary)
-
-                if let notes = booking.notes {
-                    Text("Note: \(notes)")
-                        .font(.movely.caption2)
-                        .foregroundStyle(.movelyTextSecondary)
-                        .padding(.top, .movely.micro)
-                        .lineLimit(2)
-                }
+            if viewModel.cancellationErrorMessage != nil {
+                isShowingCancellationError = true
             }
         }
     }
-}
 
-// MARK: - Status Badge
-private struct StatusBadge: View {
-    let status: BookingStatus
+    private func canCancel(
+        _ booking: Booking
+    ) -> Bool {
+        guard selectedTab == .upcoming else {
+            return false
+        }
 
-    var body: some View {
-        Text(status.rawValue.capitalized)
-            .font(.system(size: 11, weight: .bold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(badgeColor.opacity(0.15))
-            .foregroundStyle(badgeColor)
-            .clipShape(Capsule())
-    }
+        guard booking.date > Date() else {
+            return false
+        }
 
-    private var badgeColor: Color {
-        switch status {
-        case .pending: return .movelyWarning
-        case .confirmed: return .movelyPrimary
-        case .completed: return .green
-        case .cancelled: return .movelyError
+        switch booking.status {
+        case .pending, .confirmed:
+            return true
+
+        case .completed, .cancelled:
+            return false
         }
     }
+
+    // MARK: - Setup
+    private func setupViewModelIfNeeded() async {
+        guard
+            viewModel == nil,
+            let studentId = env.currentUser?.id
+        else {
+            return
+        }
+
+        let model = BookingsViewModel(
+            studentId: studentId,
+            fetchBookingsUseCase:
+                env.fetchStudentBookingsUseCase,
+            cancelBookingUseCase:
+                env.cancelBookingUseCase
+        )
+
+        viewModel = model
+
+        await model.onAppear()
+    }
+
+    // MARK: - Helpers
+    private var emptyStateMessage: String {
+        switch selectedTab {
+        case .upcoming:
+            return """
+            You don't have any upcoming sessions scheduled.
+            """
+
+        case .past:
+            return """
+            You haven't completed any sessions yet.
+            """
+        }
+    }
+
+    private func formattedDate(
+        for booking: Booking
+    ) -> String {
+        booking.date.formatted(
+            .dateTime
+                .weekday(.wide)
+                .day()
+                .month(.wide)
+                .hour()
+                .minute()
+        )
+    }
+
 }
 
 // MARK: - Preview
 #if DEBUG
+
 #Preview("Bookings - Loaded") {
     BookingsView()
-        .environment(AppEnvironment.mock(isAuthenticated: true))
+        .environment(
+            AppEnvironment.mock(
+                isAuthenticated: true
+            )
+        )
 }
 
 #Preview("Bookings - Dark") {
     BookingsView()
-        .environment(AppEnvironment.mock(isAuthenticated: true))
+        .environment(
+            AppEnvironment.mock(
+                isAuthenticated: true
+            )
+        )
         .preferredColorScheme(.dark)
 }
+
 #endif

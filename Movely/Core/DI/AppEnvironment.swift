@@ -31,6 +31,7 @@ public final class AppEnvironment {
     public let bookingRepository: BookingRepositoryProtocol
     public let createBookingUseCase: CreateBookingUseCase
     public let fetchStudentBookingsUseCase: FetchStudentBookingsUseCaseProtocol
+    public let cancelBookingUseCase: CancelBookingUseCaseProtocol
 
     // MARK: - Session
     public var currentUser: User?
@@ -55,8 +56,10 @@ public final class AppEnvironment {
         self.fetchNearbyUseCase = FetchNearbyTrainersUseCase(repository: trainerRepository)
         self.searchTrainersUseCase = SearchTrainersUseCase(repository: trainerRepository)
         self.createBookingUseCase = CreateBookingUseCase(repository: bookingRepository)
+        self.cancelBookingUseCase = CancelBookingUseCase(repository: bookingRepository)
         self.fetchStudentBookingsUseCase = FetchStudentBookingsUseCase(repository: bookingRepository)
         self.currentUser = authRepository.currentUser
+
     }
 }
 
