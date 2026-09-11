@@ -61,3 +61,45 @@ struct BookingStatusBadge: View {
     }
 
 }
+
+// MARK: - Preview
+
+#if DEBUG
+
+#Preview("Pending") {
+    BookingStatusBadge(
+        status: .pending
+    )
+    .padding()
+}
+
+#Preview("Confirmed") {
+    BookingStatusBadge(
+        status: .confirmed
+    )
+    .padding()
+}
+
+#Preview("Completed") {
+    BookingStatusBadge(
+        status: .completed
+    )
+    .padding()
+}
+
+#Preview("Cancelled") {
+    BookingStatusBadge(
+        status: .cancelled
+    )
+    .padding()
+}
+
+#Preview("Dark") {
+    BookingStatusBadge(
+        status: .confirmed
+    )
+    .padding()
+    .preferredColorScheme(.dark)
+}
+
+#endif

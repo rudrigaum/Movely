@@ -5,7 +5,6 @@
 //  Created by Rodrigo Cerqueira Reis on 08/09/26.
 //
 
-import Foundation
 import SwiftUI
 
 // MARK: - Bookings Loading View
@@ -22,7 +21,9 @@ struct BookingsLoadingView: View {
     // MARK: - Body
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: .movely.medium) {
+            LazyVStack(
+                spacing: .movely.medium
+            ) {
                 ForEach(
                     0..<Constants.skeletonCount,
                     id: \.self
@@ -46,7 +47,9 @@ struct BookingsLoadingView: View {
         RoundedRectangle(
             cornerRadius: .movely.radiusLarge
         )
-        .fill(.movelyBackgroundElevated)
+        .fill(
+            .movelyBackgroundElevated
+        )
         .frame(
             height: Constants.skeletonHeight
         )
@@ -56,3 +59,19 @@ struct BookingsLoadingView: View {
     }
 
 }
+
+// MARK: - Preview
+#if DEBUG
+
+#Preview("Loading") {
+    BookingsLoadingView()
+        .movelyScreen()
+}
+
+#Preview("Dark") {
+    BookingsLoadingView()
+        .movelyScreen()
+        .preferredColorScheme(.dark)
+}
+
+#endif

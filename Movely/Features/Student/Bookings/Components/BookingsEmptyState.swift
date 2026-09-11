@@ -5,7 +5,6 @@
 //  Created by Rodrigo Cerqueira Reis on 08/09/26.
 //
 
-import Foundation
 import SwiftUI
 
 // MARK: - Bookings Empty State
@@ -61,3 +60,30 @@ struct BookingsEmptyState: View {
     }
 
 }
+
+// MARK: - Preview
+#if DEBUG
+
+#Preview("Upcoming Empty State") {
+    BookingsEmptyState(
+        message: "You don't have any upcoming sessions scheduled."
+    )
+    .movelyScreen()
+}
+
+#Preview("Past Empty State") {
+    BookingsEmptyState(
+        message: "You haven't completed any sessions yet."
+    )
+    .movelyScreen()
+}
+
+#Preview("Dark") {
+    BookingsEmptyState(
+        message: "You don't have any upcoming sessions scheduled."
+    )
+    .movelyScreen()
+    .preferredColorScheme(.dark)
+}
+
+#endif
