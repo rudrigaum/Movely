@@ -63,7 +63,6 @@ public extension BookingDTO {
 
     static func fromDomain(_ booking: Booking) -> BookingDTO {
         return BookingDTO(
-            id: booking.id,
             studentId: booking.studentId,
             trainerId: booking.trainerId,
             date: booking.date,

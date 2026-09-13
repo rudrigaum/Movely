@@ -44,7 +44,7 @@ public struct BookingsView: View {
             .movelyScreen()
             .navigationTitle("My Bookings")
             .task {
-                await setupViewModelIfNeeded()
+                await loadBookings()
             }
             .confirmationDialog(
                 "Cancel session?",
@@ -247,11 +247,13 @@ public struct BookingsView: View {
     }
 
     // MARK: - Setup
-    private func setupViewModelIfNeeded() async {
-        guard
-            viewModel == nil,
-            let studentId = env.currentUser?.id
-        else {
+    private func loadBookings() async {
+        if let viewModel {
+            await viewModel.onRefresh()
+            return
+        }
+
+        guard let studentId = env.currentUser?.id else {
             return
         }
 
