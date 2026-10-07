@@ -18,12 +18,19 @@ public final class BookingRepository: BookingRepositoryProtocol {
     public init() {}
 
     // MARK: - Create
-    public func createBooking(_ booking: Booking) async throws {
+    public func createBooking(
+        _ booking: Booking
+    ) async throws {
         let dto = BookingDTO.fromDomain(booking)
-        let documentRef = dataBase.collection(collectionName).document(booking.id)
+
+        let documentRef = dataBase
+            .collection(collectionName)
+            .document(booking.id)
 
         do {
-            try documentRef.setData(from: dto)
+            let data = try Firestore.Encoder().encode(dto)
+
+            try await documentRef.setData(data)
         } catch {
             throw BookingError.createFailed
         }
