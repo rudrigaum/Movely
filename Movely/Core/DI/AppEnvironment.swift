@@ -55,7 +55,10 @@ public final class AppEnvironment {
         self.fetchFeaturedUseCase = FetchFeaturedTrainersUseCase(repository: trainerRepository)
         self.fetchNearbyUseCase = FetchNearbyTrainersUseCase(repository: trainerRepository)
         self.searchTrainersUseCase = SearchTrainersUseCase(repository: trainerRepository)
-        self.createBookingUseCase = CreateBookingUseCase(repository: bookingRepository)
+        self.createBookingUseCase = CreateBookingUseCase(
+            bookingRepository: bookingRepository,
+            trainerRepository: trainerRepository
+        )
         self.cancelBookingUseCase = CancelBookingUseCase(repository: bookingRepository)
         self.fetchStudentBookingsUseCase = FetchStudentBookingsUseCase(repository: bookingRepository)
         self.currentUser = authRepository.currentUser
