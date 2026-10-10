@@ -377,7 +377,6 @@ private struct SpecialtyChip: View {
     .preferredColorScheme(.dark)
 }
 
-
 #Preview("Trainer Profile - Unavailable") {
     NavigationStack {
         TrainerProfileView(trainerId: "3")
@@ -386,6 +385,5 @@ private struct SpecialtyChip: View {
             )
     }
 }
-
 
 #endif

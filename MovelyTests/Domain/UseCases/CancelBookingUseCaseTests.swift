@@ -12,6 +12,7 @@ import Testing
 
 // MARK: - Cancel Booking Use Case Tests
 @Suite("CancelBookingUseCase Tests")
+@MainActor
 struct CancelBookingUseCaseTests {
 
     // MARK: - Execute

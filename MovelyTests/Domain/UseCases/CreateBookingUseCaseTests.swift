@@ -184,12 +184,14 @@ struct CreateBookingUseCaseTests {
     // MARK: - Factory
 
     private func makeSUT(
-        trainer: Trainer = Trainer.mockList[0],
+        trainer: Trainer? = nil,
         trainerError: Error? = nil,
         bookingError: Error? = nil
     ) -> TestContext {
+        let resolvedTrainer = trainer ?? Trainer.mockList[0]
+
         let trainerRepository = CreateBookingTrainerRepositorySpy(
-            trainer: trainer,
+            trainer: resolvedTrainer,
             errorToThrow: trainerError
         )
 
