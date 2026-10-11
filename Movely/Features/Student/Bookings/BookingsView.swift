@@ -9,29 +9,45 @@ import Foundation
 import SwiftUI
 
 // MARK: - Booking Tab
+
 enum BookingTab: String, CaseIterable {
     case upcoming = "Upcoming"
     case past = "Past"
 
+    var emptyStateMessage: String {
+        switch self {
+        case .upcoming:
+            return "You don't have any upcoming sessions scheduled."
+
+        case .past:
+            return "You haven't completed any sessions yet."
+        }
+    }
 }
 
 // MARK: - Bookings View
+
 public struct BookingsView: View {
 
     // MARK: - Dependencies
+
     @Environment(AppEnvironment.self) private var env
 
     // MARK: - State
+
     @State private var viewModel: BookingsViewModel?
     @State private var selectedTab: BookingTab = .upcoming
     @State private var bookingToCancel: Booking?
     @State private var isShowingCancellationConfirmation = false
     @State private var isShowingCancellationError = false
+    @State private var isShowingRefreshError = false
 
     // MARK: - Initialization
+
     public init() {}
 
     // MARK: - Body
+
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -67,10 +83,28 @@ public struct BookingsView: View {
                     Text(message)
                 }
             }
+            .onChange(
+                of: viewModel?.refreshErrorMessage
+            ) { _, newValue in
+                isShowingRefreshError = newValue != nil
+            }
+        }
+        .alert(
+            "Unable to Refresh",
+            isPresented: $isShowingRefreshError
+        ) {
+            Button("OK", role: .cancel) {
+                viewModel?.clearRefreshError()
+            }
+        } message: {
+            if let message = viewModel?.refreshErrorMessage {
+                Text(message)
+            }
         }
     }
 
     // MARK: - Content
+
     @ViewBuilder
     private var content: some View {
         if let viewModel {
@@ -111,63 +145,66 @@ public struct BookingsView: View {
     }
 
     // MARK: - Loaded Content
-    @ViewBuilder
+
     private func loadedContent(
         upcoming: [Booking],
         past: [Booking],
         viewModel: BookingsViewModel
     ) -> some View {
         let bookings = selectedTab == .upcoming
-        ? upcoming
-        : past
+            ? upcoming
+            : past
 
-        if bookings.isEmpty {
-            BookingsEmptyState(
-                message: emptyStateMessage
-            )
-        } else {
-            bookingsList(
-                bookings: bookings,
-                viewModel: viewModel
-            )
-        }
-    }
-
-    // MARK: - Bookings List
-    private func bookingsList(
-        bookings: [Booking],
-        viewModel: BookingsViewModel
-    ) -> some View {
-        ScrollView {
-            LazyVStack(spacing: .movely.medium) {
-                ForEach(bookings) { booking in
-                    BookingCard(
-                        booking: booking,
-                        isCancelling:
-                            viewModel.cancellingBookingId == booking.id,
-                        onCancel: canCancel(booking) ? {
-                            requestCancellation(
-                                for: booking
-                            )
-                        } : nil
-                    )
-                }
+        return ScrollView {
+            if bookings.isEmpty {
+                BookingsEmptyState(
+                    message: selectedTab.emptyStateMessage
+                )
+                .containerRelativeFrame(.vertical)
+            } else {
+                bookingsList(
+                    bookings: bookings,
+                    viewModel: viewModel
+                )
             }
-            .padding(
-                .horizontal,
-                .movely.screenPaddingHorizontal
-            )
-            .padding(
-                .vertical,
-                .movely.medium
-            )
         }
         .refreshable {
             await viewModel.onRefresh()
         }
     }
 
+    // MARK: - Bookings List
+
+    private func bookingsList(
+        bookings: [Booking],
+        viewModel: BookingsViewModel
+    ) -> some View {
+        LazyVStack(spacing: .movely.medium) {
+            ForEach(bookings) { booking in
+                BookingCard(
+                    booking: booking,
+                    isCancelling:
+                        viewModel.cancellingBookingId == booking.id,
+                    onCancel: canCancel(booking) ? {
+                        requestCancellation(
+                            for: booking
+                        )
+                    } : nil
+                )
+            }
+        }
+        .padding(
+            .horizontal,
+            .movely.screenPaddingHorizontal
+        )
+        .padding(
+            .vertical,
+            .movely.medium
+        )
+    }
+
     // MARK: - Cancellation Dialog
+
     @ViewBuilder
     private var cancellationDialogActions: some View {
         Button(
@@ -198,6 +235,7 @@ public struct BookingsView: View {
     }
 
     // MARK: - Cancellation
+
     private func requestCancellation(
         for booking: Booking
     ) {
@@ -247,6 +285,7 @@ public struct BookingsView: View {
     }
 
     // MARK: - Setup
+
     private func loadBookings() async {
         if let viewModel {
             await viewModel.onRefresh()
@@ -271,19 +310,6 @@ public struct BookingsView: View {
     }
 
     // MARK: - Helpers
-    private var emptyStateMessage: String {
-        switch selectedTab {
-        case .upcoming:
-            return """
-            You don't have any upcoming sessions scheduled.
-            """
-
-        case .past:
-            return """
-            You haven't completed any sessions yet.
-            """
-        }
-    }
 
     private func formattedDate(
         for booking: Booking
@@ -297,10 +323,10 @@ public struct BookingsView: View {
                 .minute()
         )
     }
-
 }
 
 // MARK: - Preview
+
 #if DEBUG
 
 #Preview("Bookings - Loaded") {

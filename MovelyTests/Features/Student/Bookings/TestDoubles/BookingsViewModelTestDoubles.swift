@@ -10,17 +10,21 @@ import Foundation
 @testable import Movely
 
 // MARK: - Fetch Student Bookings Use Case Stub
+
 final class FetchStudentBookingsUseCaseStub:
     FetchStudentBookingsUseCaseProtocol {
 
     // MARK: - Properties
+
     private(set) var executeCallCount = 0
     private(set) var receivedStudentId: String?
 
+    var errorToThrow: Error?
+
     private let results: [[Booking]]
-    private let errorToThrow: Error?
 
     // MARK: - Initialization
+
     init(
         results: [[Booking]],
         errorToThrow: Error? = nil
@@ -30,6 +34,7 @@ final class FetchStudentBookingsUseCaseStub:
     }
 
     // MARK: - Execution
+
     func execute(
         studentId: String
     ) async throws -> [Booking] {
@@ -51,20 +56,22 @@ final class FetchStudentBookingsUseCaseStub:
 
         return results[index]
     }
-
 }
 
 // MARK: - Cancel Booking Use Case Spy
+
 final class CancelBookingUseCaseSpy:
     CancelBookingUseCaseProtocol {
 
     // MARK: - Properties
+
     private(set) var executeCallCount = 0
     private(set) var receivedBookingId: String?
 
     private let errorToThrow: Error?
 
     // MARK: - Initialization
+
     init(
         errorToThrow: Error? = nil
     ) {
@@ -72,6 +79,7 @@ final class CancelBookingUseCaseSpy:
     }
 
     // MARK: - Execution
+
     func execute(
         bookingId: String
     ) async throws {
@@ -82,5 +90,4 @@ final class CancelBookingUseCaseSpy:
             throw errorToThrow
         }
     }
-
 }

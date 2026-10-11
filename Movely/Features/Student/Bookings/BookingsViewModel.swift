@@ -9,11 +9,13 @@ import Foundation
 import SwiftUI
 
 // MARK: - View Model
+
 @Observable
 @MainActor
 public final class BookingsViewModel {
 
     // MARK: - View State
+
     public enum ViewState: Equatable {
         case idle
         case loading
@@ -22,16 +24,21 @@ public final class BookingsViewModel {
     }
 
     // MARK: - Properties
+
     public private(set) var viewState: ViewState = .idle
+
+    public private(set) var refreshErrorMessage: String?
     public private(set) var cancellingBookingId: String?
     public private(set) var cancellationErrorMessage: String?
 
     // MARK: - Dependencies
+
     private let studentId: String
     private let fetchBookingsUseCase: FetchStudentBookingsUseCaseProtocol
     private let cancelBookingUseCase: CancelBookingUseCaseProtocol
 
     // MARK: - Initialization
+
     public init(
         studentId: String,
         fetchBookingsUseCase: FetchStudentBookingsUseCaseProtocol,
@@ -43,8 +50,11 @@ public final class BookingsViewModel {
     }
 
     // MARK: - Actions
+
     public func onAppear() async {
-        if case .loaded = viewState { return }
+        if case .loaded = viewState {
+            return
+        }
 
         await fetchBookings(showLoading: true)
     }
@@ -53,8 +63,14 @@ public final class BookingsViewModel {
         await fetchBookings(showLoading: false)
     }
 
+    public func clearRefreshError() {
+        refreshErrorMessage = nil
+    }
+
     public func cancelBooking(_ booking: Booking) async {
-        guard cancellingBookingId == nil else { return }
+        guard cancellingBookingId == nil else {
+            return
+        }
 
         cancellingBookingId = booking.id
         cancellationErrorMessage = nil
@@ -83,20 +99,38 @@ public final class BookingsViewModel {
         cancellationErrorMessage = nil
     }
 
-    // MARK: - Private Methods
+    // MARK: - Fetch Bookings
+
     private func fetchBookings(showLoading: Bool) async {
+        refreshErrorMessage = nil
+
         if showLoading {
             viewState = .loading
         }
 
         do {
-            viewState = try await makeLoadedState()
+            let loadedState = try await makeLoadedState()
+
+            viewState = loadedState
         } catch {
+            handleFetchFailure()
+        }
+    }
+
+    // MARK: - Fetch Failure
+
+    private func handleFetchFailure() {
+        if case .loaded = viewState {
+            refreshErrorMessage =
+                "Failed to refresh your bookings. Please try again."
+        } else {
             viewState = .failure(
                 "Failed to load your bookings. Please try again."
             )
         }
     }
+
+    // MARK: - Cancellation Reload
 
     private func reloadAfterCancellation() async {
         do {
@@ -106,6 +140,8 @@ public final class BookingsViewModel {
                 "Your booking was cancelled, but we couldn't refresh the list. Pull to refresh and try again."
         }
     }
+
+    // MARK: - Loaded State
 
     private func makeLoadedState() async throws -> ViewState {
         let allBookings = try await fetchBookingsUseCase.execute(
@@ -137,6 +173,8 @@ public final class BookingsViewModel {
             past: past
         )
     }
+
+    // MARK: - Booking Updates
 
     private func removeBookingFromUpcoming(
         bookingId: String
